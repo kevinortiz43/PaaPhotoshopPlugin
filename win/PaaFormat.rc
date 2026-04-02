@@ -98,7 +98,7 @@ BEGIN
     LTEXT           "PAA Photoshop Plugin by Gruppe Adler",IDC_DESCRIPTION_TEXT,93,148,125,8
     CONTROL         " <a>www.gruppe-adler.de</a> ",IDC_HP_LINK,"SysLink",WS_TABSTOP,119,158,74,9
     LTEXT           "Report Issues at:",IDC_ISSUE_TEXT,28,171,57,8
-    CONTROL         "<a>https://github.com/gruppe-adler/PaaPhotoshopPlugin/issues</a>",IDC_GITHUB_LINK,
+    CONTROL         "<a>https://github.com/kevinortiz43/PaaPhotoshopPlugin/issues</a>",IDC_GITHUB_LINK,
                     "SysLink",WS_TABSTOP,86,171,196,11
 END
 
@@ -112,7 +112,8 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
-#include "PaaFormat.pipl"
+#include "PaaFormat.pipl"
+
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
 

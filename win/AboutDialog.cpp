@@ -14,7 +14,7 @@ INT_PTR CALLBACK AboutDialog::AboutDialogProc(HWND hwnd, UINT Message, WPARAM wP
         // Remove Icon
         SendMessage(hwnd, WM_SETICON, ICON_SMALL, NULL);
         // Load Logo
-        auto hBitmap = LoadBitmapA(resModule, MAKEINTRESOURCE(IDB_LOGO_BITMAP));
+        auto hBitmap = LoadBitmapW(resModule, MAKEINTRESOURCEW(IDB_LOGO_BITMAP));
         SendDlgItemMessage(hwnd, IDC_LOGO_CONTROL, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBitmap);
         DeleteObject(hBitmap);
 
@@ -61,7 +61,7 @@ INT_PTR CALLBACK AboutDialog::AboutDialogProc(HWND hwnd, UINT Message, WPARAM wP
             {
             case NM_CLICK:
             case NM_RETURN:
-                ShellExecute(NULL, "open", "https://www.gruppe-adler.de/", NULL, NULL, SW_SHOWNORMAL);
+                ShellExecuteW(NULL, L"open", L"https://www.gruppe-adler.de/", NULL, NULL, SW_SHOWNORMAL);
                 break;
             }
             break;
@@ -70,7 +70,7 @@ INT_PTR CALLBACK AboutDialog::AboutDialogProc(HWND hwnd, UINT Message, WPARAM wP
             {
             case NM_CLICK:
             case NM_RETURN:
-                ShellExecute(NULL, "open", "https://github.com/gruppe-adler/PaaPhotoshopPlugin/issues", NULL, NULL, SW_SHOWNORMAL);
+                ShellExecuteW(NULL, L"open", L"https://github.com/kevinortiz43/PaaPhotoshopPlugin/issues", NULL, NULL, SW_SHOWNORMAL);
                 break;
             }
             break;

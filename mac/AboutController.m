@@ -25,7 +25,7 @@ AboutController *gAboutController = NULL;
     
     // Set links
     [self updateControl:hpLinkID withHyperlink:@"https://www.gruppe-adler.de"];
-    [self updateControl:ghLinkID withHyperlink:@"https://github.com/gruppe-adler/PaaPhotoshopPlugin/issues"];
+    [self updateControl:ghLinkID withHyperlink:@"https://github.com/kevinortiz43/PaaPhotoshopPlugin/issues"];
     
     return self;
 }
