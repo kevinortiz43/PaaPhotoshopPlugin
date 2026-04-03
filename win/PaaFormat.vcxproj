@@ -245,8 +245,8 @@ del "$(IntDir)%(Filename).rr"
 
   <ItemGroup>
     <ResourceCompile Include="PaaFormat.rc">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\common;..\..\..\common\resources;..\..\..\..\Output\Objs\paaformat\Debug64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\common;..\..\..\common\resources;..\..\..\..\Output\Objs\paaformat\Release64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\common;..\..\..\common\resources;..\..\..\Output\Objs\paaformat\Debug64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\common;..\..\..\common\resources;..\..\..\Output\Objs\paaformat\Release64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemGroup>
 
