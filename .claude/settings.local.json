@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where cmake:*)",
+      "Bash(where vcpkg:*)",
+      "Bash(cmake:*)",
+      "Bash(dir:*)",
+      "Bash(/c/vcpkg/vcpkg.exe install:*)",
+      "Bash(mkdir -p /c/grad_aff/debug/include/grad_aff/paa)",
+      "Bash(cp -r /c/grad_aff/include/grad_aff/* /c/grad_aff/debug/include/grad_aff/)",
+      "Bash(mkdir -p /c/grad_aff/debug/lib)",
+      "Bash(cp /c/grad_aff/build_debug/Debug/grad_aff.lib /c/grad_aff/debug/lib/)",
+      "Bash(setx:*)",
+      "Bash(cmd.exe /c 'setx GRAD_AFF \"C:\\\\grad_aff\\\\release\" /M')",
+      "Bash(cmd.exe /c 'setx GRAD_AFF_DEBUG \"C:\\\\grad_aff\\\\debug\" /M')",
+      "Bash(cmd.exe /c 'setx PS_DIR \"C:\\\\Program Files\\\\Adobe\\\\Adobe Photoshop 2026\" /M')",
+      "Bash(reg query:*)"
+    ]
+  }
+}

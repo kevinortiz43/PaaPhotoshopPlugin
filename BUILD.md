@@ -30,6 +30,7 @@ Before you begin, ensure you have:
   - Windows 10 SDK (10.0.xxxxx.x) — select latest version
 - **Git** (for cloning repositories)
 - **CMake** 3.20+ (either from VS2022 installer or standalone)
+- **vcpkg** (for installing grad_aff dependencies)
 - **Adobe Photoshop 2026** installed (for testing)
 - **Python** (optional, for some CMake configurations)
 
@@ -43,6 +44,38 @@ Open **Visual Studio Installer** → **Modify** your VS2022 installation:
    - ✅ Windows 10 SDK (10.0.xxxxx.x)
    - ✅ C++ CMake tools for Windows
 
+### Install vcpkg (if not already installed)
+
+vcpkg is C++ package manager needed for grad_aff's dependency `lzokay`.
+
+```bat
+:: Clone vcpkg
+git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+
+:: Bootstrap vcpkg (run in Command Prompt, not PowerShell)
+cd C:\vcpkg
+bootstrap-vcpkg.bat
+
+:: Optional: integrate with Visual Studio (makes CMake auto-find packages)
+C:\vcpkg\vcpkg.exe integrate install
+```
+
+**Important notes:**
+
+- Use **Command Prompt (cmd.exe)** for these commands, not PowerShell. PowerShell requires `.\` prefix for local executables.
+- After installing vcpkg, **restart Visual Studio** so it picks up the integration.
+- If you must use PowerShell, use `.\bootstrap-vcpkg.bat` and `.\vcpkg.exe integrate install`.
+
+### Install lzokay with vcpkg
+
+grad_aff requires the `lzokay` library (LZO compression). Install it via vcpkg:
+
+```bat
+C:\vcpkg\vcpkg.exe install lzokay:x64-windows-static
+```
+
+This installs lzokay to `C:\vcpkg\installed\x64-windows-static`.
+
 ---
 
 ## Pre-Build Checklist
@@ -50,6 +83,7 @@ Open **Visual Studio Installer** → **Modify** your VS2022 installation:
 - [ ] Visual Studio 2022 installed with Windows SDK 10.0
 - [ ] Git installed and in PATH
 - [ ] CMake installed (run `cmake --version` to verify)
+- [ ] vcpkg installed and `lzokay:x64-windows-static` package installed
 - [ ] At least 5 GB free disk space
 - [ ] Admin rights (for copying to Program Files, setting system env vars)
 
@@ -67,18 +101,20 @@ Open **Visual Studio Installer** → **Modify** your VS2022 installation:
 
 **Important:** There are two different Photoshop SDKs:
 
-| SDK | Use for | Do NOT use for |
-|-----|---------|----------------|
-| **Photoshop Plug-in and Connection SDK** | **This plugin** (C++ file format plugins) | JavaScript UXP panels |
-| **UXP Hybrid Plugin SDK** | JavaScript-based panels | C++ file format plugins |
+| SDK                                            | Use for                                         | Do NOT use for          |
+| ---------------------------------------------- | ----------------------------------------------- | ----------------------- |
+| **Photoshop Plug-in and Connection SDK** | **This plugin** (C++ file format plugins) | JavaScript UXP panels   |
+| **UXP Hybrid Plugin SDK**                | JavaScript-based panels                         | C++ file format plugins |
 
 **Download:**
+
 1. Select **"Photoshop Plug-in and Connection SDK"**
 2. Platform: **Windows**
 3. App Version: **2026** (not 2025 or earlier)
 4. Click **Download**
 
 The file will be named something like:
+
 ```
 adobe_photoshop_sdk_2026_win_xxx.zip
 ```
@@ -94,6 +130,7 @@ mkdir D:\SDKs
 ```
 
 **Verify the extracted structure:**
+
 ```
 D:\SDKs\adobe_photoshop_sdk_2026_win\
 ├─ pluginsdk\
@@ -114,6 +151,7 @@ D:\SDKs\adobe_photoshop_sdk_2026_win\
 ### 2.1 Why Location Matters
 
 The `PaaFormat.vcxproj` file contains include paths like:
+
 ```
 ..\..\..\..\PhotoshopAPI\Photoshop
 ..\..\..\..\common\sources
@@ -130,10 +168,11 @@ Navigate to the SDK's `samplecode/format/` directory and clone THIS repository t
 cd D:\SDKs\adobe_photoshop_sdk_2026_win\pluginsdk\samplecode\format
 
 :: Clone this repository
-git clone https://github.com/kevinortiz43/PaaPhotoshopPlugin.git
+git clone https://github.com/gruppe-adler/PaaPhotoshopPlugin.git
 ```
 
 **Resulting directory tree:**
+
 ```
 D:\SDKs\adobe_photoshop_sdk_2026_win\
 ├─ pluginsdk\
@@ -154,11 +193,13 @@ D:\SDKs\adobe_photoshop_sdk_2026_win\
 Check that these files exist:
 
 **Required:**
+
 - `.../pluginsdk/PhotoshopAPI/PIDefines.h` ← Core Photoshop API
 - `.../pluginsdk/PhotoshopAPI/PIFormat.h` ← File format interface
 - `.../pluginsdk/samplecode/Resources/cnvtpipl.exe` ← PiPL compiler
 
 **Your plugin:**
+
 - `PaaPhotoshopPlugin/common/PaaFormat.cpp`
 - `PaaPhotoshopPlugin/win/PaaFormat.vcxproj`
 
@@ -172,12 +213,17 @@ grad_aff is the C++ library that handles PAA encoding/decoding. You must build i
 
 ### 3.1 Clone grad_aff
 
-Choose a location **outside** the Photoshop SDK tree (e.g., `D:\deps\` or `C:\grad_aff\`):
+grad_aff is a separate dependency and should be cloned **outside** both:
+
+- The Adobe Photoshop SDK folder
+- This PaaPhotoshopPlugin repository
+
+Choose a location where you have write permissions (e.g., `C:\grad_aff` or `D:\deps\grad_aff`):
 
 ```bat
-:: Example: install to C:\grad_aff\ (source + build)
+:: Recommended: install to C:\grad_aff\ (source + build)
 cd C:\
-git clone https://github.com/kevinortiz43/grad_aff.git
+git clone https://github.com/gruppe-adler/grad_aff.git
 ```
 
 ### 3.2 Build grad_aff with CMake
@@ -200,20 +246,29 @@ cmake --install build_debug --prefix C:\grad_aff\debug
 ```
 
 **Flags explained:**
+
 - `-DBUILD_SHARED_LIBS=OFF` → Builds static library `grad_aff.lib` (recommended)
   - No DLL needed at runtime
   - Avoids "module not found" errors
 - `--prefix` → Install location (used by the plugin's `.vcxproj` via env vars)
+
+**Note:** grad_aff requires the `lzokay` library. If you installed it via vcpkg (see Prerequisites), CMake should find it automatically. If you get an error "Could not find a package configuration file provided by 'lzokay'", verify:
+
+- vcpkg is installed and integrated (`C:\vcpkg\vcpkg.exe integrate install`)
+- lzokay is installed: `C:\vcpkg\vcpkg.exe install lzokay:x64-windows-static`
+- You may need to pass `-DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake` to CMake
 
 ### 3.3 Verify grad_aff Installation
 
 After building, check these files exist:
 
 **Release:**
+
 - `C:\grad_aff\release\include\grad_aff\paa\paa.h`
 - `C:\grad_aff\release\lib\grad_aff.lib` (or `lib\x64\grad_aff.lib` on some CMake versions)
 
 **Debug:**
+
 - `C:\grad_aff\debug\include\grad_aff\paa\paa.h`
 - `C:\grad_aff\debug\lib\grad_aff.lib` (or `lib\x64\grad_aff.lib`)
 
@@ -221,12 +276,13 @@ If `.lib` files are in `lib/x64/`, adjust your environment variable to `C:\grad_
 
 ### 3.4 grad_aff Build Troubleshooting
 
-| Symptom | Likely cause | Solution |
-|---------|--------------|----------|
-| CMake can't find generator | VS2022 not in PATH | Use **Developer Command Prompt** for VS2022, or specify `-G "Visual Studio 17 2022" -A x64` |
-| `grad_aff.lib` not found after install | CMake used different install layout | Search: `dir /s grad_aff.lib` from C:\grad_aff; update env var accordingly |
-| Header not found in `include/grad_aff/paa` | grad_aff source structure changed | Verify you're on `dev` branch: `git checkout dev` |
-| Link errors about missing symbols | Built as shared but no DLL | Rebuild with `-DBUILD_SHARED_LIBS=OFF` |
+| Symptom                                      | Likely cause                        | Solution                                                                                           |
+| -------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------- |
+| CMake can't find generator                   | VS2022 not in PATH                  | Use**Developer Command Prompt** for VS2022, or specify `-G "Visual Studio 17 2022" -A x64` |
+| `Could not find package "lzokay"`          | lzokay not installed via vcpkg      | Install:`C:\vcpkg\vcpkg.exe install lzokay:x64-windows-static`                                   |
+| `grad_aff.lib` not found after install     | CMake used different install layout | Search:`dir /s grad_aff.lib C:\grad_aff`; update env var accordingly                             |
+| Header not found in `include/grad_aff/paa` | grad_aff source structure changed   | Verify you're on `dev` branch: `git checkout dev`                                              |
+| Link errors about missing symbols            | Built as shared but no DLL          | Rebuild with `-DBUILD_SHARED_LIBS=OFF`                                                           |
 
 ---
 
@@ -234,11 +290,11 @@ If `.lib` files are in `lib/x64/`, adjust your environment variable to `C:\grad_
 
 The plugin's `.vcxproj` uses these environment variables to locate dependencies:
 
-| Variable | Value | Example |
-|----------|-------|---------|
-| `GRAD_AFF` | Path to **release** grad_aff install | `C:\grad_aff\release` |
-| `GRAD_AFF_DEBUG` | Path to **debug** grad_aff install | `C:\grad_aff\debug` |
-| `PS_DIR` | Photoshop 2026 installation folder | `C:\Program Files\Adobe\Adobe Photoshop 2026` |
+| Variable           | Value                                     | Example                                         |
+| ------------------ | ----------------------------------------- | ----------------------------------------------- |
+| `GRAD_AFF`       | Path to**release** grad_aff install | `C:\grad_aff\release`                         |
+| `GRAD_AFF_DEBUG` | Path to**debug** grad_aff install   | `C:\grad_aff\debug`                           |
+| `PS_DIR`         | Photoshop 2026 installation folder        | `C:\Program Files\Adobe\Adobe Photoshop 2026` |
 
 ### 4.1 Set System Environment Variables
 
@@ -269,6 +325,7 @@ The plugin's `.vcxproj` uses these environment variables to locate dependencies:
 5. Click **Apply** → **OK**
 
 **Test:** In the **Output** window (show **Build** output), you should see lines like:
+
 ```
 Using include path: C:\grad_aff\release\include
 Using library path: C:\grad_aff\release\lib
@@ -297,16 +354,19 @@ Double-click `PaaFormat.sln` or open from Visual Studio.
 ### 5.3 Build
 
 **Build Solution:**
+
 - Menu: **Build** → **Build Solution**
 - Shortcut: `Ctrl+Shift+B`
 - Right-click project → **Build**
 
 **Expected output (Release):**
+
 ```
 ========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========
 ```
 
 **Output file location:**
+
 ```
 D:\SDKs\adobe_photoshop_sdk_2026_win\pluginsdk\samplecode\format\PaaPhotoshopPlugin\..\..\..\..\Output\Win\Release64\PaaFormat.8bi
 ```
@@ -322,11 +382,13 @@ copy /Y "..\..\..\..\Output\Win\Release64\PaaFormat.8bi" "C:\Program Files\Adobe
 ```
 
 **Check the Output window** for:
+
 ```
 1>  Copying file to "C:\Program Files\Adobe\Adobe Photoshop 2026\Plug-ins\PaaFormat.8bi".
 ```
 
 If the copy fails:
+
 - Permission error → Run Visual Studio as **Administrator**
 - Path not found → Verify `PS_DIR` points to correct Photoshop install
 - Access denied → Close Photoshop before building
@@ -334,10 +396,12 @@ If the copy fails:
 ### 5.5 Build Outputs
 
 **Debug build (`Debug|x64`):**
+
 - Output: `...\Output\Win\Debug64\PaaFormat.8bi`
 - Also copies `PaaFormat.pdb` (debug symbols) to Photoshop Plug-ins folder
 
 **Release build (`Release|x64`):**
+
 - Output: `...\Output\Win\Release64\PaaFormat.8bi`
 - No `.pdb` file (optimized)
 
@@ -348,11 +412,13 @@ If the copy fails:
 ### 6.1 Verify Plugin is Installed
 
 Check that the file exists:
+
 ```
 C:\Program Files\Adobe\Adobe Photoshop 2026\Plug-ins\PaaFormat.8bi
 ```
 
 If not, manually copy from the SDK Output folder:
+
 ```bat
 copy "D:\SDKs\adobe_photoshop_sdk_2026_win\pluginsdk\samplecode\format\PaaPhotoshopPlugin\..\..\..\..\Output\Win\Release64\PaaFormat.8bi" "C:\Program Files\Adobe\Adobe Photoshop 2026\Plug-ins\"
 ```
@@ -371,13 +437,13 @@ copy "D:\SDKs\adobe_photoshop_sdk_2026_win\pluginsdk\samplecode\format\PaaPhotos
 
 **Expected results:**
 
-| File type | Photoshop mode | Alpha channel | Appearance |
-|-----------|----------------|---------------|------------|
-| `*_co.paa` (color) | RGB Color | No | Normal image |
-| `*_ca.paa` (camo/alpha) | RGB Color | Yes | Checkerboard transparency |
-| `*_nohq.paa` (normal) | RGB Color | Yes | Blue-purple tint (correct for normals) |
-| `*_smdi.paa` (smooth damage) | Grayscale | Yes | Grayscale with alpha |
-| `*_as.paa` (addon surface) | RGB Color | No | Normal image |
+| File type                      | Photoshop mode | Alpha channel | Appearance                             |
+| ------------------------------ | -------------- | ------------- | -------------------------------------- |
+| `*_co.paa` (color)           | RGB Color      | No            | Normal image                           |
+| `*_ca.paa` (camo/alpha)      | RGB Color      | Yes           | Checkerboard transparency              |
+| `*_nohq.paa` (normal)        | RGB Color      | Yes           | Blue-purple tint (correct for normals) |
+| `*_smdi.paa` (smooth damage) | Grayscale      | Yes           | Grayscale with alpha                   |
+| `*_as.paa` (addon surface)   | RGB Color      | No            | Normal image                           |
 
 If the file opens without error, the plugin is working.
 
@@ -391,6 +457,7 @@ If the file opens without error, the plugin is working.
 6. Verify the new `.paa` opens in **TexView 2** (Arma 3 tool) or loads in-game
 
 **Write mode rules:**
+
 - **RGB Color** → DXT1 (no alpha) or DXT5 (with alpha) depending on layers
 - **Grayscale** → AI88
 
@@ -405,9 +472,23 @@ If the file opens without error, the plugin is working.
 **Cause:** Photoshop SDK path is wrong or incomplete.
 
 **Fix:**
+
 1. Verify SDK extraction: Check `D:\SDKs\adobe_photoshop_sdk_2026_win\pluginsdk\PhotoshopAPI\PIDefines.h`
 2. Verify repo location: `PaaPhotoshopPlugin` must be in `samplecode/format/`
 3. If you moved the SDK, you must **re-clone** the plugin in the correct relative location
+
+---
+
+#### Error: `Could not find package "lzokay"` during grad_aff CMake
+
+**Cause:** lzokay library not installed via vcpkg.
+
+**Fix:**
+
+1. Install vcpkg (if not already): see Prerequisites
+2. Install lzokay: `C:\vcpkg\vcpkg.exe install lzokay:x64-windows-static`
+3. Re-run grad_aff CMake with vcpkg toolchain:`cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake`
+4. Or set `CMAKE_PREFIX_PATH=C:\vcpkg\installed\x64-windows-static`
 
 ---
 
@@ -416,6 +497,7 @@ If the file opens without error, the plugin is working.
 **Cause:** grad_aff not built, or `GRAD_AFF` environment variable points to wrong location.
 
 **Fix:**
+
 1. Verify grad_aff header exists: `C:\grad_aff\release\include\grad_aff\paa\paa.h`
 2. Open **Command Prompt** → `echo %GRAD_AFF%`
    - Should output `C:\grad_aff\release`
@@ -428,6 +510,7 @@ If the file opens without error, the plugin is working.
 **Cause:** grad_aff library not in expected location.
 
 **Fix:**
+
 1. Check: `C:\grad_aff\release\lib\grad_aff.lib`
 2. If not there, search: `dir /s grad_aff.lib C:\grad_aff`
 3. If found in `lib\x64\`, set `GRAD_AFF` to `C:\grad_aff\release\lib\x64`
@@ -440,6 +523,7 @@ If the file opens without error, the plugin is working.
 **Cause:** The Adobe SDK's `Resources/cnvtpipl.exe` is missing.
 
 **Fix:**
+
 1. Verify: `D:\SDKs\adobe_photoshop_sdk_2026_win\pluginsdk\samplecode\Resources\cnvtpipl.exe`
 2. If missing, the SDK ZIP was incompletely extracted — re-extract
 3. Ensure no antivirus quarantined `cnvtpipl.exe` (it's a legitimate tool)
@@ -451,6 +535,7 @@ If the file opens without error, the plugin is working.
 **Cause:** Cannot write to `C:\Program Files\...` without admin rights.
 
 **Fix:**
+
 1. **Option A:** Close Photoshop, then **Run as Administrator** when building
 2. **Option B:** Manually copy `.8bi` after build (no admin needed if you own the files)
 3. **Option C:** Disable UAC (not recommended)
@@ -462,6 +547,7 @@ If the file opens without error, the plugin is working.
 **Cause:** If you built grad_aff as a **shared library** (`.dll`), the DLL is not in PATH.
 
 **Fix:**
+
 1. **Recommended:** Rebuild grad_aff with `-DBUILD_SHARED_LIBS=OFF` (static library)
 2. **Alternative:** Copy `grad_aff.dll` to `C:\Program Files\Adobe\Adobe Photoshop 2026\Plug-ins\`
 3. **Alternative:** Add grad_aff `bin/` directory to system PATH
@@ -475,6 +561,7 @@ If the file opens without error, the plugin is working.
 **Cause:** Plugin not loaded, or `PaaFormat.8bi` not in correct Plug-ins folder.
 
 **Fix:**
+
 1. Verify file exists: `C:\Program Files\Adobe\Adobe Photoshop 2026\Plug-ins\PaaFormat.8bi`
 2. Restart Photoshop (completely exit, not just close windows)
 3. Check **File → Open → Format dropdown** — should see "PAA (*.paa)"
@@ -487,6 +574,7 @@ If the file opens without error, the plugin is working.
 **Cause:** Possible mipmap or DXT compression mismatch.
 
 **Fix:** This is usually a grad_aff version mismatch:
+
 - Ensure you're using `dev` branch, not `master`
 - Rebuild grad_aff cleanly: delete `build/` folders, rebuild from scratch
 - Try different build options: `-DCMAKE_BUILD_TYPE=Release` (no `RelWithDebInfo`)
@@ -498,12 +586,14 @@ If the file opens without error, the plugin is working.
 **Cause:** Unhandled edge case in PAA format (corrupt header, unknown type, etc.)
 
 **Fix:**
+
 1. Enable debug build: Build `Debug|x64` configuration
 2. Run Photoshop from **Visual Studio** (Debug → Start Debugging)
 3. Open problematic file → VS should break on exception
 4. Check `Output` window for error message from `DoMessageUI`
 
 **Report the issue** with:
+
 - PAA file (if possible)
 - Stack trace from VS
 - SDK version, grad_aff commit hash
@@ -515,6 +605,7 @@ If the file opens without error, the plugin is working.
 **Cause:** Plugin detected insufficient disk space during write.
 
 **Fix:**
+
 1. Check destination drive free space
 2. Verify you have write permissions to target folder
 3. If saving to network drive, try local drive instead
@@ -536,6 +627,7 @@ If the file opens without error, the plugin is working.
 **Cause:** Old SDK folder still in include path from previous builds.
 
 **Fix:**
+
 1. In project properties → **VC++ Directories** → **Include Directories**
 2. Remove any references to old SDK paths (e.g., `...\Photoshop CS6\...`)
 3. Clean rebuild: **Build → Clean Solution**, then **Build → Rebuild Solution**
@@ -585,7 +677,7 @@ rmdir /s /q C:\grad_aff\debug
 :: Rebuild grad_aff
 cd C:\grad_aff
 git checkout dev
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
 cmake --build build --config Release
 cmake --install build --prefix C:\grad_aff\release
 
@@ -614,11 +706,13 @@ If all checks pass, the plugin is successfully built and ready to use.
 
 ## Getting Help
 
-- **Issues:** https://github.com/kevinortiz43/PaaPhotoshopPlugin/issues
+- **Issues:** https://github.com/gruppe-adler/PaaPhotoshopPlugin/issues
 - **Arma 3 modding:** https://discord.gg/gruppe-adler (Gruppe Adler Discord)
-- **grad_aff library:** https://github.com/kevinortiz43/grad_aff
+- **grad_aff library:** https://github.com/gruppe-adler/grad_aff
+- **lzokay/vcpkg:** https://github.com/Microsoft/vcpkg
 
 When reporting issues, include:
+
 1. Photoshop version (2026)
 2. SDK version (v2-Dec-2025)
 3. grad_aff commit/branch
@@ -627,5 +721,5 @@ When reporting issues, include:
 
 ---
 
-**Last updated:** 2026-04-02  
+**Last updated:** 2026-04-02
 **Target SDK:** Adobe Photoshop 2026 (v2-Dec-2025)
