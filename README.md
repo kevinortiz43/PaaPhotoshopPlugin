@@ -6,6 +6,8 @@ This is my fork of Gruppe Adlee PAA Photoshop Plugin and fix for 2026 PaaPhotosh
 For the PAA file format specification see the [Bohemia Interactive Wiki](https://community.bistudio.com/wiki/PAA_File_Format).
 
 ---
+## Important: If you just want the plug in go to releases and grab the latest release 
+##If you want to build it yourself look below
 
 ## Quick Start
 
