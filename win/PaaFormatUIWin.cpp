@@ -21,6 +21,6 @@ bool DoAboutUI(FormatRecordPtr gFormatRecord)
 }
 
 
-void DoMessageUI(std::string titel, std::string message) {
-	MessageBox(GetActiveWindow(), titel.c_str(), message.c_str(), MB_OK | MB_ICONSTOP);
+void DoMessageUI(const std::string& title, const std::string& message) {
+	MessageBox(GetActiveWindow(), title.c_str(), message.c_str(), MB_OK | MB_ICONSTOP);
 }

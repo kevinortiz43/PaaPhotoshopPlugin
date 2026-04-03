@@ -8,7 +8,7 @@
 #define plugInName			"PAA Format"
 #define plugInCopyrightYear	"2020"
 #define plugInDescription \
-	"An Adobe Photoshop¨ plug-in for the paa file format."
+	"An Adobe Photoshopï¿½ plug-in for the paa file format."
 
 //-------------------------------------------------------------------------------
 //	Definitions -- Required by other resources in this rez file.

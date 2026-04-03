@@ -6,14 +6,12 @@
 DLLExport MACPASCAL void PluginMain(const int16 selector, FormatRecordPtr formatParamBlock, intptr_t* data, int16* result);
 
 // -----------------------------------------------------------------------
-// Globals (must be extern "C" to match Photoshop SDK declarations)
+// Globals
 // -----------------------------------------------------------------------
-extern "C" {
-SPBasicSuite*    sSPBasic      = nullptr;
-SPPluginRef      gPluginRef    = nullptr;
+SPBasicSuite* sSPBasic = nullptr;
+SPPluginRef      gPluginRef = nullptr;
 FormatRecordPtr  gFormatRecord = nullptr;
-int16*           gResult       = nullptr;
-}
+int16* gResult = nullptr;
 
 // -----------------------------------------------------------------------
 // Utilities
@@ -54,10 +52,10 @@ static std::string GetWin32ErrorString(DWORD code) {
 // Normal maps (_nohq) in Arma use DXT5nm convention (R=X, G=Y channels).
 // grad_aff writes standard DXT5; the channels are already correct from PS.
 //
-static grad_aff::TypeOfPaX PickPaaTypeClass(bool hasAlpha, bool isGrayscale) {
-    if (isGrayscale)  return grad_aff::TypeOfPaX::AI88;
-    if (hasAlpha)     return grad_aff::TypeOfPaX::DXT5;
-    return grad_aff::TypeOfPaX::DXT1;
+static grad_aff::Paa::TypeOfPaX PickPaaTypeClass(bool hasAlpha, bool isGrayscale) {
+    if (isGrayscale)  return grad_aff::Paa::TypeOfPaX::GRAYwAlpha;
+    if (hasAlpha)     return grad_aff::Paa::TypeOfPaX::DXT5;
+    return grad_aff::Paa::TypeOfPaX::DXT1;
 }
 
 // -----------------------------------------------------------------------
@@ -111,7 +109,7 @@ static void Read(int64_t count, void* buffer) {
     uint8_t* dst = reinterpret_cast<uint8_t*>(buffer);
 
     while (remaining > 0) {
-        int32_t chunk = static_cast<int32_t>(std::min(remaining, static_cast<int64_t>(0x7FFF'0000)));
+        int32_t chunk = static_cast<int32_t>(std::min<int64_t>(remaining, 0x7FFF0000));
         int32_t readCount = chunk;
         auto result = PSSDKRead(
             gFormatRecord->dataFork,
@@ -125,17 +123,17 @@ static void Read(int64_t count, void* buffer) {
 #endif
             return;
         }
-        dst       += readCount;
+        dst += readCount;
         remaining -= readCount;
     }
 }
 
 static void Write(int64_t count, const void* buffer) {
     int64_t       remaining = count;
-    const uint8_t* src      = reinterpret_cast<const uint8_t*>(buffer);
+    const uint8_t* src = reinterpret_cast<const uint8_t*>(buffer);
 
     while (remaining > 0) {
-        int32_t chunk      = static_cast<int32_t>(std::min(remaining, static_cast<int64_t>(0x7FFF'0000)));
+        int32_t chunk = static_cast<int32_t>(std::min<int64_t>(remaining, 0x7FFF0000));
         int32_t writeCount = chunk;
         auto result = PSSDKWrite(
             gFormatRecord->dataFork,
@@ -154,7 +152,7 @@ static void Write(int64_t count, const void* buffer) {
 #endif
             return;
         }
-        src       += writeCount;
+        src += writeCount;
         remaining -= writeCount;
     }
 }
@@ -166,17 +164,18 @@ static void Write(int64_t count, const void* buffer) {
 DLLExport MACPASCAL void PluginMain(
     const int16      selector,
     FormatRecordPtr  formatParamBlock,
-    intptr_t*        data,
-    int16*           result)
+    intptr_t* data,
+    int16* result)
 {
     try {
         gFormatRecord = formatParamBlock;
-        gPluginRef    = reinterpret_cast<SPPluginRef>(gFormatRecord->plugInRef);
-        gResult       = result;
+        gPluginRef = reinterpret_cast<SPPluginRef>(gFormatRecord->plugInRef);
+        gResult = result;
 
         if (selector == formatSelectorAbout) {
             DoAboutUI(gFormatRecord);
-        } else {
+        }
+        else {
             sSPBasic = formatParamBlock->sSPBasic;
             if (gFormatRecord->advanceState == nullptr) {
                 *gResult = errPlugInHostInsufficient;
@@ -199,7 +198,7 @@ DLLExport MACPASCAL void PluginMain(
 
             case formatSelectorEstimatePrepare: DoEstimatePrepare(); break;
             case formatSelectorEstimateStart:   DoEstimateStart();   break;
-            case formatSelectorEstimateContinue:DoEstimateContinue();break;
+            case formatSelectorEstimateContinue:DoEstimateContinue(); break;
             case formatSelectorEstimateFinish:  DoEstimateFinish();  break;
 
             case formatSelectorWritePrepare:   DoWritePrepare();   break;
@@ -211,12 +210,12 @@ DLLExport MACPASCAL void PluginMain(
             }
         }
 
-        if (selector == formatSelectorAbout         ||
-            selector == formatSelectorWriteFinish   ||
-            selector == formatSelectorReadFinish    ||
+        if (selector == formatSelectorAbout ||
+            selector == formatSelectorWriteFinish ||
+            selector == formatSelectorReadFinish ||
             selector == formatSelectorOptionsFinish ||
-            selector == formatSelectorEstimateFinish||
-            selector == formatSelectorFilterFile    ||
+            selector == formatSelectorEstimateFinish ||
+            selector == formatSelectorFilterFile ||
             *gResult != noErr)
         {
 #if __PIMac__
@@ -286,7 +285,7 @@ static void DoReadStart() {
         return;
     }
 
-    auto width  = paa.mipMaps[0].width;
+    auto width = paa.mipMaps[0].width;
     auto height = paa.mipMaps[0].height;
 
     // Bit 15 set on width signals special Arma encoding — strip flag
@@ -296,8 +295,8 @@ static void DoReadStart() {
     // ----------------------------------------------------------------
     // Determine image mode from PAA type class
     // ----------------------------------------------------------------
-    bool hasAlpha     = false;
-    bool isGrayscale  = false;
+    bool hasAlpha = false;
+    bool isGrayscale = false;
 
     // Check TAGG markers
     for (const auto& tagg : paa.taggs) {
@@ -307,18 +306,18 @@ static void DoReadStart() {
 
     // Check type class for grayscale (AI88) detection
     switch (paa.typeOfPax) {
-    case grad_aff::TypeOfPaX::AI88:
+    case grad_aff::Paa::TypeOfPaX::GRAYwAlpha:
         isGrayscale = true;
-        hasAlpha    = true;  // AI88 has 8-bit greyscale + 8-bit alpha
+        hasAlpha = true;  // AI88 has 8-bit greyscale + 8-bit alpha
         break;
-    case grad_aff::TypeOfPaX::DXT5:
-    case grad_aff::TypeOfPaX::DXT3:
-    case grad_aff::TypeOfPaX::ARGB4444:
-    case grad_aff::TypeOfPaX::ARGB1555:
-    case grad_aff::TypeOfPaX::ARGB8888:
+    case grad_aff::Paa::TypeOfPaX::DXT5:
+    case grad_aff::Paa::TypeOfPaX::DXT3:
+    case grad_aff::Paa::TypeOfPaX::RGBA4444:
+    case grad_aff::Paa::TypeOfPaX::RGBA5551:
+    case grad_aff::Paa::TypeOfPaX::RGBA8888:
         hasAlpha = true;
         break;
-    case grad_aff::TypeOfPaX::DXT1:
+    case grad_aff::Paa::TypeOfPaX::DXT1:
     default:
         // keep hasAlpha as detected from TAGG
         break;
@@ -329,17 +328,18 @@ static void DoReadStart() {
     // ----------------------------------------------------------------
     if (isGrayscale) {
         gFormatRecord->imageMode = plugInModeGrayScale;
-        gFormatRecord->planes    = hasAlpha ? 2 : 1;
+        gFormatRecord->planes = hasAlpha ? 2 : 1;
         gFormatRecord->transparencyPlane = hasAlpha ? 1 : -1;
-    } else {
+    }
+    else {
         gFormatRecord->imageMode = plugInModeRGBColor;
-        gFormatRecord->planes    = hasAlpha ? 4 : 3;
+        gFormatRecord->planes = hasAlpha ? 4 : 3;
         gFormatRecord->transparencyPlane = hasAlpha ? 3 : -1;
     }
 
-    gFormatRecord->imageSize.h   = gFormatRecord->imageSize32.h   = width;
-    gFormatRecord->imageSize.v   = gFormatRecord->imageSize32.v   = height;
-    gFormatRecord->depth         = 8;
+    gFormatRecord->imageSize.h = gFormatRecord->imageSize32.h = width;
+    gFormatRecord->imageSize.v = gFormatRecord->imageSize32.v = height;
+    gFormatRecord->depth = 8;
 }
 
 // -----------------------------------------------------------------------
@@ -367,26 +367,26 @@ static void DoReadContinue() {
         return;
     }
 
-    auto width  = paa.mipMaps[0].width;
+    auto width = paa.mipMaps[0].width;
     auto height = paa.mipMaps[0].height;
-    auto data   = paa.mipMaps[0].data;  // always RGBA from grad_aff
+    auto data = paa.mipMaps[0].data;  // always RGBA from grad_aff
 
     // Determine mode (reuse same logic as DoReadStart)
-    bool hasAlpha    = false;
+    bool hasAlpha = false;
     bool isGrayscale = false;
     for (const auto& tagg : paa.taggs)
         if (tagg.signature == "GGATGALF") hasAlpha = true;
 
     switch (paa.typeOfPax) {
-    case grad_aff::TypeOfPaX::AI88:
+    case grad_aff::Paa::TypeOfPaX::GRAYwAlpha:
         isGrayscale = true;
-        hasAlpha    = true;
+        hasAlpha = true;
         break;
-    case grad_aff::TypeOfPaX::DXT5:
-    case grad_aff::TypeOfPaX::DXT3:
-    case grad_aff::TypeOfPaX::ARGB4444:
-    case grad_aff::TypeOfPaX::ARGB1555:
-    case grad_aff::TypeOfPaX::ARGB8888:
+    case grad_aff::Paa::TypeOfPaX::DXT5:
+    case grad_aff::Paa::TypeOfPaX::DXT3:
+    case grad_aff::Paa::TypeOfPaX::RGBA4444:
+    case grad_aff::Paa::TypeOfPaX::RGBA5551:
+    case grad_aff::Paa::TypeOfPaX::RGBA8888:
         hasAlpha = true;
         break;
     default:
@@ -406,15 +406,17 @@ static void DoReadContinue() {
             converted.push_back(data[i]);      // R → Grey
             converted.push_back(data[i + 3]);  // A
         }
-        gFormatRecord->planes    = 2;
+        gFormatRecord->planes = 2;
         gFormatRecord->transparencyPlane = 1;
-    } else if (isGrayscale) {
+    }
+    else if (isGrayscale) {
         converted.reserve(static_cast<size_t>(width) * height);
         for (size_t i = 0; i < data.size(); i += 4)
             converted.push_back(data[i]);      // R → Grey
-        gFormatRecord->planes    = 1;
+        gFormatRecord->planes = 1;
         gFormatRecord->transparencyPlane = -1;
-    } else if (!hasAlpha) {
+    }
+    else if (!hasAlpha) {
         // RGB only — strip alpha channel
         converted.reserve(static_cast<size_t>(width) * height * 3);
         for (size_t i = 0; i < data.size(); i += 4) {
@@ -422,26 +424,27 @@ static void DoReadContinue() {
             converted.push_back(data[i + 1]);
             converted.push_back(data[i + 2]);
         }
-        gFormatRecord->planes    = 3;
+        gFormatRecord->planes = 3;
         gFormatRecord->transparencyPlane = -1;
-    } else {
+    }
+    else {
         // RGBA — pass through as-is
         converted = data;
-        gFormatRecord->planes    = 4;
+        gFormatRecord->planes = 4;
         gFormatRecord->transparencyPlane = 3;
     }
 
     gFormatRecord->planeBytes = 1;
-    gFormatRecord->colBytes   = gFormatRecord->planeBytes * gFormatRecord->planes;
-    gFormatRecord->rowBytes   = gFormatRecord->colBytes   * width;
+    gFormatRecord->colBytes = gFormatRecord->planeBytes * gFormatRecord->planes;
+    gFormatRecord->rowBytes = gFormatRecord->colBytes * width;
 
     gFormatRecord->loPlane = 0;
     gFormatRecord->hiPlane = gFormatRecord->planes - 1;
 
-    gFormatRecord->theRect.left    = gFormatRecord->theRect32.left  = 0;
-    gFormatRecord->theRect.right   = gFormatRecord->theRect32.right = width;
-    gFormatRecord->theRect.top     = gFormatRecord->theRect32.top   = 0;
-    gFormatRecord->theRect.bottom  = gFormatRecord->theRect32.bottom= height;
+    gFormatRecord->theRect.left = gFormatRecord->theRect32.left = 0;
+    gFormatRecord->theRect.right = gFormatRecord->theRect32.right = width;
+    gFormatRecord->theRect.top = gFormatRecord->theRect32.top = 0;
+    gFormatRecord->theRect.bottom = gFormatRecord->theRect32.bottom = height;
 
     gFormatRecord->data = converted.data();
     gFormatRecord->advanceState();
@@ -455,7 +458,7 @@ static void DoReadFinish() {}
 // -----------------------------------------------------------------------
 
 static void DoOptionsPrepare() { gFormatRecord->maxData = 0; }
-static void DoOptionsStart()   { gFormatRecord->data    = nullptr; }
+static void DoOptionsStart() { gFormatRecord->data = nullptr; }
 
 // -----------------------------------------------------------------------
 // Estimate
@@ -472,7 +475,7 @@ static void DoEstimateStart() {
 }
 
 static void DoEstimateContinue() {}
-static void DoEstimateFinish()   {}
+static void DoEstimateFinish() {}
 
 // -----------------------------------------------------------------------
 // Write — Prepare
@@ -491,17 +494,17 @@ static void DoWritePrepare() {
 // -----------------------------------------------------------------------
 
 static void DoWriteStart() {
-    if (gFormatRecord->HostSupports32BitCoordinates && 
+    if (gFormatRecord->HostSupports32BitCoordinates &&
         gFormatRecord->imageSize32.h &&
         gFormatRecord->imageSize32.v)
         gFormatRecord->PluginUsing32BitCoordinates = TRUE;
 
-    const int32_t width  = gFormatRecord->PluginUsing32BitCoordinates
-                         ? gFormatRecord->imageSize32.h
-                         : gFormatRecord->imageSize.h;
+    const int32_t width = gFormatRecord->PluginUsing32BitCoordinates
+        ? gFormatRecord->imageSize32.h
+        : gFormatRecord->imageSize.h;
     const int32_t height = gFormatRecord->PluginUsing32BitCoordinates
-                         ? gFormatRecord->imageSize32.v
-                         : gFormatRecord->imageSize.v;
+        ? gFormatRecord->imageSize32.v
+        : gFormatRecord->imageSize.v;
 
     // PAA spec: dimensions must be powers of 2
     if (!isPowerOfTwo(static_cast<uint32_t>(width)) ||
@@ -514,7 +517,7 @@ static void DoWriteStart() {
     }
 
     // Supported image modes
-    const bool isRGB       = (gFormatRecord->imageMode == plugInModeRGBColor);
+    const bool isRGB = (gFormatRecord->imageMode == plugInModeRGBColor);
     const bool isGrayscale = (gFormatRecord->imageMode == plugInModeGrayScale);
 
     if (!isRGB && !isGrayscale) {
@@ -526,22 +529,22 @@ static void DoWriteStart() {
     }
 
     const bool hasAlpha = (gFormatRecord->planes == 4) ||
-                          (isGrayscale && gFormatRecord->planes == 2);
+        (isGrayscale && gFormatRecord->planes == 2);
 
     // ---------------------------------------------------------------
     // Request pixel data from Photoshop
     // ---------------------------------------------------------------
-    gFormatRecord->depth      = 8;
-    gFormatRecord->loPlane    = 0;
-    gFormatRecord->hiPlane    = gFormatRecord->planes - 1;
+    gFormatRecord->depth = 8;
+    gFormatRecord->loPlane = 0;
+    gFormatRecord->hiPlane = gFormatRecord->planes - 1;
     gFormatRecord->planeBytes = 1;
-    gFormatRecord->colBytes   = gFormatRecord->planeBytes * gFormatRecord->planes;
-    gFormatRecord->rowBytes   = gFormatRecord->colBytes   * width;
+    gFormatRecord->colBytes = gFormatRecord->planeBytes * gFormatRecord->planes;
+    gFormatRecord->rowBytes = gFormatRecord->colBytes * width;
 
-    gFormatRecord->theRect.left    = gFormatRecord->theRect32.left  = 0;
-    gFormatRecord->theRect.right   = gFormatRecord->theRect32.right = width;
-    gFormatRecord->theRect.top     = gFormatRecord->theRect32.top   = 0;
-    gFormatRecord->theRect.bottom  = gFormatRecord->theRect32.bottom= height;
+    gFormatRecord->theRect.left = gFormatRecord->theRect32.left = 0;
+    gFormatRecord->theRect.right = gFormatRecord->theRect32.right = width;
+    gFormatRecord->theRect.top = gFormatRecord->theRect32.top = 0;
+    gFormatRecord->theRect.bottom = gFormatRecord->theRect32.bottom = height;
 
     const size_t pixelBytes = static_cast<size_t>(width) * height * gFormatRecord->planes;
     std::vector<uint8_t> psData(pixelBytes);
@@ -559,14 +562,15 @@ static void DoWriteStart() {
         // Grayscale (1 or 2 planes) → RGBA by replicating grey into R,G,B
         const size_t planes = static_cast<size_t>(gFormatRecord->planes);
         for (size_t i = 0; i < pixelBytes; i += planes) {
-            uint8_t grey  = psData[i];
+            uint8_t grey = psData[i];
             uint8_t alpha = (planes == 2) ? psData[i + 1] : 255;
             rgbaData.push_back(grey);
             rgbaData.push_back(grey);
             rgbaData.push_back(grey);
             rgbaData.push_back(alpha);
         }
-    } else if (gFormatRecord->planes == 3) {
+    }
+    else if (gFormatRecord->planes == 3) {
         // RGB → RGBA
         for (size_t i = 0; i < pixelBytes; i += 3) {
             rgbaData.push_back(psData[i]);
@@ -574,7 +578,8 @@ static void DoWriteStart() {
             rgbaData.push_back(psData[i + 2]);
             rgbaData.push_back(255);
         }
-    } else {
+    }
+    else {
         // RGBA — pass through
         rgbaData = psData;
     }
@@ -583,13 +588,13 @@ static void DoWriteStart() {
     // Build grad_aff Paa and encode
     // ---------------------------------------------------------------
     auto paa = grad_aff::Paa();
-    paa.typeOfPax    = PickPaaTypeClass(hasAlpha, isGrayscale);
+    paa.typeOfPax = PickPaaTypeClass(hasAlpha, isGrayscale);
     paa.hasTransparency = hasAlpha;
 
-    grad_aff::MipMap mipMap;
-    mipMap.width      = static_cast<uint32_t>(width);
-    mipMap.height     = static_cast<uint32_t>(height);
-    mipMap.data       = rgbaData;
+    MipMap mipMap;
+    mipMap.width = static_cast<uint32_t>(width);
+    mipMap.height = static_cast<uint32_t>(height);
+    mipMap.data = rgbaData;
     mipMap.dataLength = static_cast<uint32_t>(mipMap.data.size());
 
     paa.mipMaps.clear();
@@ -610,4 +615,4 @@ static void DoWriteStart() {
 }
 
 static void DoWriteContinue() {}
-static void DoWriteFinish()   {}
+static void DoWriteFinish() {}
