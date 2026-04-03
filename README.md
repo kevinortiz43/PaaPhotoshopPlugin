@@ -6,7 +6,14 @@ This is my fork of Gruppe Adlee PAA Photoshop Plugin and update for 2026 Photosh
 For the PAA file format specification see the [Bohemia Interactive Wiki](https://community.bistudio.com/wiki/PAA_File_Format).
 
 ---
-## Important: If you just want the plug in go to releases and grab the latest release and follow the instructions 
+
+### For End Users (No Building Required)
+
+1. Skip to **[Installation (Pre-built)](#installation-pre-built)**
+2. Download the latest `PaaFormat.8bi` from [Releases](https://github.com/kevinortiz43/PaaPhotoshopPlugin/releases)
+3. Copy to Photoshop Plug-ins folder
+4. Restart Photoshop
+
 ##If you want to build it yourself look below
 
 ## Quick Start
@@ -250,13 +257,6 @@ This README serves as the **primary documentation** for:
 1. **Understanding the plugin** — What it does, supported formats, limitations
 2. **Pre-built installation** — Copy `.8bi` to Plug-ins folder (end users)
 3. **Building from source** — Step-by-step guide for developers (see below)
-
-### For End Users (No Building Required)
-
-1. Skip to **[Installation (Pre-built)](#installation-pre-built)**
-2. Download the latest `PaaFormat.8bi` from [Releases](https://github.com/kevinortiz43/PaaPhotoshopPlugin/releases)
-3. Copy to Photoshop Plug-ins folder
-4. Restart Photoshop
 
 ### For Developers (Building From Source)
 
