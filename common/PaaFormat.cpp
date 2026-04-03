@@ -55,7 +55,7 @@ static std::string GetWin32ErrorString(DWORD code) {
 // grad_aff writes standard DXT5; the channels are already correct from PS.
 //
 static grad_aff::TypeOfPaX PickPaaTypeClass(bool hasAlpha, bool isGrayscale) {
-    if (isGrayscale)  return grad_aff::TypeOfPaX::GRAYwAlpha;
+    if (isGrayscale)  return grad_aff::TypeOfPaX::AI88;
     if (hasAlpha)     return grad_aff::TypeOfPaX::DXT5;
     return grad_aff::TypeOfPaX::DXT1;
 }
@@ -307,15 +307,15 @@ static void DoReadStart() {
 
     // Check type class for grayscale (AI88) detection
     switch (paa.typeOfPax) {
-    case grad_aff::TypeOfPaX::GRAYwAlpha:
+    case grad_aff::TypeOfPaX::AI88:
         isGrayscale = true;
         hasAlpha    = true;  // AI88 has 8-bit greyscale + 8-bit alpha
         break;
     case grad_aff::TypeOfPaX::DXT5:
     case grad_aff::TypeOfPaX::DXT3:
-    case grad_aff::TypeOfPaX::RGBA4444:
-    case grad_aff::TypeOfPaX::RGBA5551:
-    case grad_aff::TypeOfPaX::RGBA8888:
+    case grad_aff::TypeOfPaX::ARGB4444:
+    case grad_aff::TypeOfPaX::ARGB1555:
+    case grad_aff::TypeOfPaX::ARGB8888:
         hasAlpha = true;
         break;
     case grad_aff::TypeOfPaX::DXT1:
@@ -378,15 +378,15 @@ static void DoReadContinue() {
         if (tagg.signature == "GGATGALF") hasAlpha = true;
 
     switch (paa.typeOfPax) {
-    case grad_aff::TypeOfPaX::GRAYwAlpha:
+    case grad_aff::TypeOfPaX::AI88:
         isGrayscale = true;
         hasAlpha    = true;
         break;
     case grad_aff::TypeOfPaX::DXT5:
     case grad_aff::TypeOfPaX::DXT3:
-    case grad_aff::TypeOfPaX::RGBA4444:
-    case grad_aff::TypeOfPaX::RGBA5551:
-    case grad_aff::TypeOfPaX::RGBA8888:
+    case grad_aff::TypeOfPaX::ARGB4444:
+    case grad_aff::TypeOfPaX::ARGB1555:
+    case grad_aff::TypeOfPaX::ARGB8888:
         hasAlpha = true;
         break;
     default:
