@@ -1,12 +1,12 @@
 
 # Gruppe Adler PAA Photoshop Plugin — 2026 Edition
 
-This is my fork of Gruppe Adlee PAA Photoshop Plugin and fix for 2026 PaaPhotoshopPlugin is a native C++ Photoshop File Format Plugin (`.8bi`) for opening and saving Arma 3 PAA texture files directly in Photoshop.
+This is my fork of Gruppe Adlee PAA Photoshop Plugin and update for 2026 Photoshop. PaahotoshopPlugin is a native C++ Photoshop File Format Plugin (`.8bi`) for opening and saving Arma 3 PAA texture files directly in Photoshop.
 
 For the PAA file format specification see the [Bohemia Interactive Wiki](https://community.bistudio.com/wiki/PAA_File_Format).
 
 ---
-## Important: If you just want the plug in go to releases and grab the latest release 
+## Important: If you just want the plug in go to releases and grab the latest release and follow the instructions 
 ##If you want to build it yourself look below
 
 ## Quick Start
